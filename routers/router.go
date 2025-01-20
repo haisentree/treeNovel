@@ -1,10 +1,13 @@
 package routers
 
 import (
+	"github.com/beego/beego/v2/server/web"
 	"treeNovel/controllers"
-	"github.com/astaxie/beego"
 )
 
 func init() {
-    beego.Router("/", &controllers.MainController{})
+	web.CtrlGet("/", (*controllers.ArticleController).GetHome)
+
+	web.CtrlGet("/article/:id", (*controllers.ArticleController).GetArticle)
+	web.CtrlGet("/chapter/:id", (*controllers.ArticleController).GetChapter)
 }
