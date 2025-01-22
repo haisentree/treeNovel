@@ -49,7 +49,7 @@ func init() {
 
 func main() {
 	// GetContent("https://www.22biqu.com/biqu100/40517611.html")
-	GetArticle("https://www.22biqu.com/biqu71672/")
+	GetArticle("https://www.22biqu.com/biqu71676/")
 	// https://www.22biqu.com/biqu71669/
 	// https://www.22biqu.com/biqu77577/
 }
