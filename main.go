@@ -1,15 +1,19 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"github.com/beego/beego/v2/server/web"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"strings"
 	"treeNovel/global"
 	"treeNovel/models"
 	_ "treeNovel/routers"
+
+	"github.com/beego/beego/v2/server/web"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
+
+var addr = flag.String("addr", "0.0.0.0:8083", "http service address")
 
 func init() {
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
@@ -25,8 +29,10 @@ func init() {
 }
 
 func main() {
+	flag.Parse()
+
 	web.AddFuncMap("ShowContent", ShowContent)
-	web.Run("127.0.0.1:8080")
+	web.Run(*addr)
 }
 
 // 去除$$符号，增加p标签
