@@ -1,44 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.ArticleDetail.Title}} - treeNovel</title>
+    <link href="/static/css/base.css" rel="stylesheet">
 </head>
 <body>
-<div class="container">
-    <div class="row" style="border-style: solid">
-        <div class="col" >
-            <div class = "list-item">
-                <img src= "{{.ArticleDetail.CoverURL}}" style="float: left;width: 120px;height: 150px;padding-right: 2px">
-                <ul>
-                    <li style="font-size: 20px">{{.ArticleDetail.Title}}</li>
-                    <li style="height: 20px">作者：{{.ArticleDetail.Author}}</li>
-                </ul>
+<header class="site-header">
+    <div class="inner">
+        <a class="logo" href="/">treeNovel</a>
+        <span class="slogan">本地小说阅读站</span>
+    </div>
+</header>
+
+<main class="container">
+    <div class="book-head">
+        <img class="cover" src="{{.ArticleDetail.CoverURL}}" alt="{{.ArticleDetail.Title}}"
+             onerror="this.onerror=null;this.src='/static/img/cover-default.svg'">
+        <div class="info">
+            <h1>{{.ArticleDetail.Title}}</h1>
+            <div class="meta-line">
+                <span>{{.ArticleDetail.Author}}</span>
+                {{if .ArticleDetail.Category}}<span class="badge">{{.ArticleDetail.Category}}</span>{{end}}
+                {{if .ArticleDetail.Status}}<span class="badge">{{.ArticleDetail.Status}}</span>{{end}}
+                <span class="badge ghost">{{.ArticleDetail.Source}}</span>
+                <span class="badge ghost">{{len .ArticleDetail.Chapters}} 章</span>
             </div>
+            <p class="desc">{{.ArticleDetail.Description}}</p>
         </div>
     </div>
 
-    <div class="row" style="border-style: solid">
-        <div class="col" >
-            <h1>描述</h1>
-            <div class = "list-item">
-                <p>{{.ArticleDetail.Description}}</p>
-            </div>
-        </div>
-    </div>
-
-
-    <div class="row" style="border-style: solid">
-            <h1>章节</h1>
-                {{ range $key,$val := .ArticleDetail.Chapters }}
-                <div class="col">
-<!--                    <a href="/article/{{.ArticleID}}/chapter/{{$val.ID}}">{{$val.Title}}</a>-->
-                    <a href="/chapter/{{$val.ID}}">{{$val.Title}}</a>
-                </div>
-                {{end}}
-    </div>
-
-
-</div>
+    <h2 class="section-title">目录</h2>
+    {{if .ArticleDetail.Chapters}}
+    <ul class="chapter-list">
+        {{range $val := .ArticleDetail.Chapters}}
+        <li><a href="/chapter/{{$val.ID}}" title="{{$val.Title}}">{{$val.Title}}</a></li>
+        {{end}}
+    </ul>
+    {{else}}
+    <div class="empty">还没有章节，运行爬虫抓取正文</div>
+    {{end}}
+</main>
 </body>
 </html>

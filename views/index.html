@@ -1,30 +1,47 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>treeNovel - 在线小说</title>
     <link href="/static/css/base.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
-
 </head>
 <body>
-<div class="container">
-    <div class="row" style="border-style: solid">
-        {{ range $key,$val := .ArticleList }}
-        <div class="col-4" >
-            <div class = "list-item">
-                <a href="/article/{{$val.ID}}">
-                    <img src= "{{$val.CoverURL}}" style="float: left;width: 120px;height: 150px;padding-right: 2px">
-                </a>
-                <ul>
-                    <li style="font-size: 20px">{{$val.Title}}</li>
-                    <li style="overflow: hidden;height: 100px">{{$val.Description}}</li>
-                    <li>{{$val.Author}}</li>
-                </ul>
-            </div>
-        </div>
-        {{ end }}
+<header class="site-header">
+    <div class="inner">
+        <a class="logo" href="/">treeNovel</a>
+        <span class="slogan">本地小说阅读站</span>
     </div>
-</div>
+</header>
+
+<main class="container">
+    {{if .ArticleList}}
+    <h2 class="page-title">书架 <span class="count">{{len .ArticleList}} 本</span></h2>
+    <div class="book-grid">
+        {{range $val := .ArticleList}}
+        <a class="book-card" href="/article/{{$val.ID}}">
+            <img class="cover" src="{{$val.CoverURL}}" alt="{{$val.Title}}"
+                 onerror="this.onerror=null;this.src='/static/img/cover-default.svg'">
+            <div class="info">
+                <div class="title">{{$val.Title}}</div>
+                <div class="meta">
+                    {{$val.Author}}
+                    {{if $val.Category}}<span class="sep">·</span>{{$val.Category}}{{end}}
+                </div>
+                <div class="desc">{{$val.Description}}</div>
+                <div>
+                    {{if $val.Status}}<span class="badge">{{$val.Status}}</span>{{end}}
+                    <span class="badge ghost">{{$val.Source}}</span>
+                </div>
+            </div>
+        </a>
+        {{end}}
+    </div>
+    {{else}}
+    <div class="empty">书架还是空的，先用爬虫抓一本书进来吧：<br><br>
+        <code>go run ./cmd/spider -source kunnu -url https://www.kunnu8.com/fanren/</code>
+    </div>
+    {{end}}
+</main>
 </body>
 </html>

@@ -1,13 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.ChapterDetail.Title}} - treeNovel</title>
+    <link href="/static/css/base.css" rel="stylesheet">
 </head>
 <body>
-<h1>{{.ChapterDetail.Title}}</h1>
-{{range $key,$val := .ContentList }}
-    <p>{{ $val }}</p>
-{{end}}
+<header class="site-header">
+    <div class="inner">
+        <a class="logo" href="/">treeNovel</a>
+        <span class="slogan">本地小说阅读站</span>
+    </div>
+</header>
+
+<main class="reader">
+    <h1>{{.ChapterDetail.Title}}</h1>
+    <a class="back-link" href="/article/{{.ChapterDetail.ArticleID}}">返回目录</a>
+
+    <div class="content">
+        {{range $val := .ContentList}}
+        <p>{{$val}}</p>
+        {{end}}
+    </div>
+
+    <div class="pager">
+        {{if .PrevChapter}}
+        <a href="/chapter/{{.PrevChapter.ID}}" title="{{.PrevChapter.Title}}">上一章：{{.PrevChapter.Title}}</a>
+        {{else}}
+        <span class="disabled">已是第一章</span>
+        {{end}}
+
+        {{if .NextChapter}}
+        <a href="/chapter/{{.NextChapter.ID}}" title="{{.NextChapter.Title}}">下一章：{{.NextChapter.Title}}</a>
+        {{else}}
+        <span class="disabled">已是最后一章</span>
+        {{end}}
+    </div>
+</main>
 </body>
 </html>

@@ -61,3 +61,22 @@ func (c *Chapter) FindChapterByID(id uint) Chapter {
 	global.DB.Where("id = ?", id).First(&chapter)
 	return chapter
 }
+
+// FindPrevNext 返回同一本书内相邻的上一章/下一章（按 id 顺序），不存在则为 nil。
+func (c *Chapter) FindPrevNext(id uint) (prev, next *Chapter) {
+	var cur Chapter
+	if global.DB.Where("id = ?", id).First(&cur).Error != nil {
+		return nil, nil
+	}
+	var p Chapter
+	if global.DB.Where("article_id = ? AND id < ?", cur.ArticleID, id).
+		Order("id DESC").First(&p).Error == nil {
+		prev = &p
+	}
+	var n Chapter
+	if global.DB.Where("article_id = ? AND id > ?", cur.ArticleID, id).
+		Order("id ASC").First(&n).Error == nil {
+		next = &n
+	}
+	return prev, next
+}

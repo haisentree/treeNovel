@@ -36,13 +36,16 @@ func (c *ArticleController) GetChapter() {
 
 	temp, _ := strconv.ParseUint(chapterID, 10, 64)
 	chapterIDUint := uint(temp)
-	articleModel := models.NewChapter()
-	chapterDetail := articleModel.FindChapterByID(chapterIDUint)
+	chapterModel := models.NewChapter()
+	chapterDetail := chapterModel.FindChapterByID(chapterIDUint)
+	prevChapter, nextChapter := chapterModel.FindPrevNext(chapterIDUint)
 
 	contentList := strings.Split(chapterDetail.Content, "$$")
 
 	c.Data["ChapterDetail"] = chapterDetail
 	c.Data["ContentList"] = contentList
+	c.Data["PrevChapter"] = prevChapter
+	c.Data["NextChapter"] = nextChapter
 
 	c.TplName = "content.html"
 }
