@@ -9,14 +9,15 @@ import (
 	_ "treeNovel/routers"
 
 	"github.com/beego/beego/v2/server/web"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
 var addr = flag.String("addr", "0.0.0.0:8083", "http service address")
 
 func init() {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	// WAL + busy_timeout：允许爬虫写入与网站读取并存
+	db, err := gorm.Open(sqlite.Open("test.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)"), &gorm.Config{})
 	if err != nil {
 		fmt.Println(err)
 	}
