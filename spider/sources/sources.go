@@ -30,3 +30,10 @@ func Names() []string {
 	}
 	return names
 }
+
+// All 返回全部已注册适配器（供站点管理与健康检查使用）。
+func All() []spider.SiteAdapter {
+	out := make([]spider.SiteAdapter, len(all))
+	copy(out, all)
+	return out
+}

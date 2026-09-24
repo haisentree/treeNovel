@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台 - treeNovel</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+    <link href="/static/css/admin.css" rel="stylesheet">
+</head>
+<body>
+<nav class="admin-nav">
+    <div class="inner">
+        <a class="logo" href="/">treeNovel</a>
+        <span class="tag">后台</span>
+        <div class="links">
+            <a class="active" href="/admin">仪表盘</a>
+            <a href="/admin/tasks">爬虫任务</a>
+            <a href="/admin/sites">站点管理</a>
+            <a href="/admin/books">书库</a>
+            <form method="post" action="/admin/logout" style="margin:0">
+                <button type="submit">退出</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="stat-grid">
+        <div class="stat"><div class="num">{{.Books}}</div><div class="label">书籍</div></div>
+        <div class="stat"><div class="num">{{.Chapters}}</div><div class="label">章节</div></div>
+        <div class="stat"><div class="num">{{index .TaskCount "queued"}}</div><div class="label">排队任务</div></div>
+        <div class="stat"><div class="num">{{index .TaskCount "running"}}</div><div class="label">执行中</div></div>
+        <div class="stat"><div class="num">{{index .TaskCount "success"}}</div><div class="label">已完成</div></div>
+        <div class="stat"><div class="num">{{index .TaskCount "failed"}}</div><div class="label">失败</div></div>
+    </div>
+
+    <div class="panel">
+        <h2>最近任务</h2>
+        {{if .Recent}}
+        <div class="table-wrap">
+        <table class="list">
+            <tr><th>#</th><th>站点</th><th>地址</th><th>状态</th><th>结果</th><th>创建时间</th></tr>
+            {{range .Recent}}
+            <tr>
+                <td class="muted">{{.ID}}</td>
+                <td>{{.Source}}</td>
+                <td class="wrap"><a href="{{.BookURL}}" target="_blank" rel="noopener" title="{{.BookURL}}">{{.BookURL}}</a></td>
+                <td><span class="badge st-{{.Status}}">{{.Status}}</span></td>
+                <td class="wrap">
+                    {{if .BookID}}<a href="/article/{{.BookID}}">查看书籍</a> · {{end}}
+                    <span class="muted">{{.Message}}</span>
+                </td>
+                <td class="muted">{{.CreatedAt.Format "01-02 15:04"}}</td>
+            </tr>
+            {{end}}
+        </table>
+        </div>
+        {{else}}
+        <div class="empty" style="padding:30px">还没有任务，去 <a href="/admin/tasks">创建一个爬虫任务</a></div>
+        {{end}}
+    </div>
+</main>
+</body>
+</html>

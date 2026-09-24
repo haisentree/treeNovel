@@ -1,51 +1,42 @@
 package controllers
 
 import (
-	"github.com/beego/beego/v2/server/web"
+	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+
 	"treeNovel/models"
 )
 
-type ArticleController struct {
-	web.Controller
+// Home 书架首页。
+func Home(c *gin.Context) {
+	c.HTML(http.StatusOK, "index.html", gin.H{
+		"ArticleList": models.NewArticle().FindAllArticle(),
+	})
 }
 
-func (c *ArticleController) GetHome() {
-	articleModel := models.NewArticle()
-	articleList := articleModel.FindAllArticle()
-	c.Data["ArticleList"] = articleList
-	c.TplName = "index.html"
+// Article 书籍详情与章节目录。
+func Article(c *gin.Context) {
+	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
+	c.HTML(http.StatusOK, "article.html", gin.H{
+		"ArticleDetail": models.NewArticle().FindArticleByID(uint(id)),
+		"ArticleID":     uint(id),
+	})
 }
 
-func (c *ArticleController) GetArticle() {
-	articleID := c.Ctx.Input.Param(":id")
-
-	temp, _ := strconv.ParseUint(articleID, 10, 64)
-	articleIDUint := uint(temp)
-	articleModel := models.NewArticle()
-	articleDetail := articleModel.FindArticleByID(articleIDUint)
-
-	c.Data["ArticleDetail"] = articleDetail
-	c.Data["ArticleID"] = articleIDUint
-	c.TplName = "article.html"
-}
-
-func (c *ArticleController) GetChapter() {
-	chapterID := c.Ctx.Input.Param(":id")
-
-	temp, _ := strconv.ParseUint(chapterID, 10, 64)
-	chapterIDUint := uint(temp)
+// Chapter 章节正文阅读页。
+func Chapter(c *gin.Context) {
+	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	chapterModel := models.NewChapter()
-	chapterDetail := chapterModel.FindChapterByID(chapterIDUint)
-	prevChapter, nextChapter := chapterModel.FindPrevNext(chapterIDUint)
+	chapterDetail := chapterModel.FindChapterByID(uint(id))
+	prevChapter, nextChapter := chapterModel.FindPrevNext(uint(id))
 
-	contentList := strings.Split(chapterDetail.Content, "$$")
-
-	c.Data["ChapterDetail"] = chapterDetail
-	c.Data["ContentList"] = contentList
-	c.Data["PrevChapter"] = prevChapter
-	c.Data["NextChapter"] = nextChapter
-
-	c.TplName = "content.html"
+	c.HTML(http.StatusOK, "content.html", gin.H{
+		"ChapterDetail": chapterDetail,
+		"ContentList":   strings.Split(chapterDetail.Content, "$$"),
+		"PrevChapter":   prevChapter,
+		"NextChapter":   nextChapter,
+	})
 }

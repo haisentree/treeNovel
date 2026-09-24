@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爬虫任务 - treeNovel 后台</title>
+    {{if .HasActive}}<meta http-equiv="refresh" content="5">{{end}}
+    <link href="/static/css/base.css" rel="stylesheet">
+    <link href="/static/css/admin.css" rel="stylesheet">
+</head>
+<body>
+<nav class="admin-nav">
+    <div class="inner">
+        <a class="logo" href="/">treeNovel</a>
+        <span class="tag">后台</span>
+        <div class="links">
+            <a href="/admin">仪表盘</a>
+            <a class="active" href="/admin/tasks">爬虫任务</a>
+            <a href="/admin/sites">站点管理</a>
+            <a href="/admin/books">书库</a>
+            <form method="post" action="/admin/logout" style="margin:0">
+                <button type="submit">退出</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="panel">
+        <h2>新建爬虫任务</h2>
+        {{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
+        <form method="post" action="/admin/tasks">
+            <div class="form-row">
+                <div class="form-field">
+                    <label>站点</label>
+                    <select name="source" required>
+                        {{range .Sources}}
+                        <option value="{{.}}" {{if $.Form}}{{if eq (index $.Form "Source") .}}selected{{end}}{{end}}>{{.}}</option>
+                        {{end}}
+                    </select>
+                </div>
+                <div class="form-field" style="flex:1;min-width:260px">
+                    <label>书籍页地址</label>
+                    <input type="text" name="url" style="width:100%" placeholder="https://www.kunnu8.com/fanren/"
+                           value="{{if .Form}}{{index .Form "URL"}}{{end}}" required>
+                </div>
+                <div class="form-field">
+                    <label>章节上限（0 不限）</label>
+                    <input type="number" name="max" min="0"
+                           value="{{if .Form}}{{index .Form "Max"}}{{else}}0{{end}}">
+                </div>
+                <button class="btn" type="submit">入队执行</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="panel">
+        <h2>任务记录{{if .HasActive}} <span class="badge st-running">执行中，页面每 5 秒自动刷新</span>{{end}}</h2>
+        {{if .Tasks}}
+        <div class="table-wrap">
+        <table class="list">
+            <tr><th>#</th><th>站点</th><th>地址</th><th>上限</th><th>状态</th><th>新增</th><th>结果</th><th>创建时间</th><th>操作</th></tr>
+            {{range .Tasks}}
+            <tr>
+                <td class="muted">{{.ID}}</td>
+                <td>{{.Source}}</td>
+                <td class="wrap"><a href="{{.BookURL}}" target="_blank" rel="noopener" title="{{.BookURL}}">{{.BookURL}}</a></td>
+                <td class="muted">{{if .MaxChapters}}{{.MaxChapters}}{{else}}不限{{end}}</td>
+                <td><span class="badge st-{{.Status}}">{{.Status}}</span></td>
+                <td class="muted">{{.SavedChapters}}</td>
+                <td class="wrap">
+                    {{if .BookID}}<a href="/article/{{.BookID}}">查看书籍</a> · {{end}}
+                    <span class="muted">{{.Message}}</span>
+                </td>
+                <td class="muted">{{.CreatedAt.Format "01-02 15:04"}}</td>
+                <td>
+                    <form method="post" action="/admin/tasks/{{.ID}}/rerun" style="margin:0">
+                        <button class="btn ghost" type="submit">重跑</button>
+                    </form>
+                </td>
+            </tr>
+            {{end}}
+        </table>
+        </div>
+        {{else}}
+        <div class="empty" style="padding:30px">还没有任务</div>
+        {{end}}
+    </div>
+</main>
+</body>
+</html>

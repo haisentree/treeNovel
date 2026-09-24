@@ -57,10 +57,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := spider.CrawlBook(db, ad, *bookURL, spider.Options{
+	bookID, saved, err := spider.CrawlBook(db, ad, *bookURL, spider.Options{
 		Delay:       *delay,
 		MaxChapters: *max,
-	}); err != nil {
+	})
+	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("完成：书籍 id=%d，本次新增 %d 章", bookID, saved)
 }

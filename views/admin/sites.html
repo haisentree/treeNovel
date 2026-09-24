@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>站点管理 - treeNovel 后台</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+    <link href="/static/css/admin.css" rel="stylesheet">
+</head>
+<body>
+<nav class="admin-nav">
+    <div class="inner">
+        <a class="logo" href="/">treeNovel</a>
+        <span class="tag">后台</span>
+        <div class="links">
+            <a href="/admin">仪表盘</a>
+            <a href="/admin/tasks">爬虫任务</a>
+            <a class="active" href="/admin/sites">站点管理</a>
+            <a href="/admin/books">书库</a>
+            <form method="post" action="/admin/logout" style="margin:0">
+                <button type="submit">退出</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="panel">
+        <h2 style="display:flex;align-items:center;gap:12px">
+            爬虫站点（{{len .Sites}} 个）
+            <form method="post" action="/admin/sites/check-all" style="margin:0 0 0 auto">
+                <button class="btn" type="submit">全部检测</button>
+            </form>
+        </h2>
+        <div class="empty" style="padding:10px 0 16px;text-align:left;font-size:13px">
+            站点适配器在代码中注册（spider/sources/），此处管理与探测；
+            「可达」只代表域名活着，选择器是否仍匹配建议用小上限试爬验证；
+            停用的站点不能再创建任务，排队中的任务也会被拒绝执行。
+        </div>
+        <div class="table-wrap">
+        <table class="list">
+            <tr><th>站点</th><th>域名</th><th>启用</th><th>检测</th><th>HTTP</th><th>延迟</th><th>错误</th><th>检测时间</th><th>操作</th></tr>
+            {{range .Sites}}
+            <tr>
+                <td><span class="badge">{{.Source}}</span></td>
+                <td class="muted">{{.Domains}}</td>
+                <td>
+                    {{if .Enabled}}<span class="badge st-success">启用</span>{{else}}<span class="badge st-queued">停用</span>{{end}}
+                </td>
+                <td>
+                    {{if .CheckedAt}}
+                    {{if .Reachable}}<span class="badge st-success">可达</span>{{else}}<span class="badge st-failed">不可达</span>{{end}}
+                    {{else}}<span class="badge st-queued">未检测</span>{{end}}
+                </td>
+                <td class="muted">{{if .StatusCode}}{{.StatusCode}}{{else}}-{{end}}</td>
+                <td class="muted">{{if .CheckedAt}}{{.LatencyMS}} ms{{else}}-{{end}}</td>
+                <td class="wrap"><span class="muted" title="{{.Error}}">{{if .Error}}{{.Error}}{{else}}-{{end}}</span></td>
+                <td class="muted">{{if .CheckedAt}}{{.CheckedAt.Format "01-02 15:04:05"}}{{else}}-{{end}}</td>
+                <td>
+                    <div style="display:flex;gap:6px">
+                        <form method="post" action="/admin/sites/{{.Source}}/check" style="margin:0">
+                            <button class="btn ghost" type="submit">检测</button>
+                        </form>
+                        <form method="post" action="/admin/sites/{{.Source}}/toggle" style="margin:0"
+                              {{if .Enabled}}onsubmit="return confirm('停用 {{.Source}} 后将无法创建其爬虫任务，确定？')"{{end}}>
+                            <button class="btn ghost" type="submit">{{if .Enabled}}停用{{else}}启用{{end}}</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {{end}}
+        </table>
+        </div>
+    </div>
+</main>
+</body>
+</html>

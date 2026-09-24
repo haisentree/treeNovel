@@ -1,5 +1,5 @@
 package models
 
 var Models = []interface{}{
-	&Article{}, &Chapter{},
+	&Article{}, &Chapter{}, &CrawlTask{}, &SiteStatus{},
 }

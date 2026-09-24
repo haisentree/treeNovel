@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -41,20 +42,28 @@ func (o *Options) fill() {
 //   - 书籍按「来源+作者+标题」去重，已存在时复用记录并做增量更新
 //     （只补缺失章节），所以中断后重跑即可续爬，连载书也可重复执行追更；
 //   - 章节按「标题+书籍ID」去重；
-//   - 段落沿用旧库的 "$$" 分隔约定入库，展示端按 "$$" 切回段落。
-func CrawlBook(db *gorm.DB, ad SiteAdapter, bookURL string, opt Options) error {
+//   - 段落沿用旧库的 "$$" 分隔约定入库，展示端按 "$$" 切回段落；
+//   - 返回值：书籍 ID（便于调用方关联）与本次新入库的章节数。
+func CrawlBook(db *gorm.DB, ad SiteAdapter, bookURL string, opt Options) (bookID uint, saved int, err error) {
 	opt.fill()
 
 	c := colly.NewCollector(
 		colly.UserAgent(opt.UserAgent),
 		colly.AllowedDomains(ad.Domains()...),
 	)
+	// 慢站点大页面（整页目录）容易超过 colly 默认超时；
+	// 且部分站点对 Go 默认 TLS 握手响应极慢，统一放宽
+	c.SetRequestTimeout(60 * time.Second)
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.TLSHandshakeTimeout = 60 * time.Second
+	tr.ResponseHeaderTimeout = 60 * time.Second
+	c.WithTransport(tr)
 	if err := c.Limit(&colly.LimitRule{
 		DomainGlob:  "*",
 		Delay:       opt.Delay,
 		RandomDelay: opt.Delay,
 	}); err != nil {
-		return fmt.Errorf("设置限速: %w", err)
+		return 0, 0, fmt.Errorf("设置限速: %w", err)
 	}
 
 	// Colly 默认同步访问：Visit 返回时回调已执行完，
@@ -81,11 +90,11 @@ func CrawlBook(db *gorm.DB, ad SiteAdapter, bookURL string, opt Options) error {
 	// 1. 书籍页
 	bookDoc, err := visit(bookURL)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 	meta, firstPageLinks, err := ad.ParseBook(bookURL, bookDoc)
 	if err != nil {
-		return fmt.Errorf("解析书籍页: %w", err)
+		return 0, 0, fmt.Errorf("解析书籍页: %w", err)
 	}
 
 	// 2. 查找或创建书籍记录（同来源+作者+标题视为同一本）
@@ -104,7 +113,7 @@ func CrawlBook(db *gorm.DB, ad SiteAdapter, bookURL string, opt Options) error {
 			Source:      ad.Name(),
 		}
 		if err := db.Create(&article).Error; err != nil {
-			return fmt.Errorf("写入书籍: %w", err)
+			return 0, 0, fmt.Errorf("写入书籍: %w", err)
 		}
 		log.Printf("[spider] 新书入库 《%s》(id=%d)", meta.Title, article.ID)
 	}
@@ -150,7 +159,6 @@ func CrawlBook(db *gorm.DB, ad SiteAdapter, bookURL string, opt Options) error {
 	}
 
 	// 4. 逐章抓取入库
-	saved := 0
 	for i, chapterURL := range chapterURLs {
 		doc, err := visit(chapterURL)
 		if err != nil {
@@ -183,5 +191,5 @@ func CrawlBook(db *gorm.DB, ad SiteAdapter, bookURL string, opt Options) error {
 		}
 	}
 	log.Printf("[spider] 《%s》完成，本次新入库 %d 章", meta.Title, saved)
-	return nil
+	return article.ID, saved, nil
 }

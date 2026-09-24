@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录后台 - treeNovel</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+    <link href="/static/css/admin.css" rel="stylesheet">
+</head>
+<body>
+<div class="login-box">
+    <h1>treeNovel 后台</h1>
+    <div class="hint">管理爬虫任务与书库</div>
+    {{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
+    <form method="post" action="/admin/login">
+        <input type="password" name="password" placeholder="密码（默认 admin，环境变量 ADMIN_PASSWORD 可改）"
+               autofocus required>
+        <button class="btn" type="submit">登录</button>
+    </form>
+</div>
+</body>
+</html>

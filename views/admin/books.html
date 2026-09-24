@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>书库 - treeNovel 后台</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+    <link href="/static/css/admin.css" rel="stylesheet">
+</head>
+<body>
+<nav class="admin-nav">
+    <div class="inner">
+        <a class="logo" href="/">treeNovel</a>
+        <span class="tag">后台</span>
+        <div class="links">
+            <a href="/admin">仪表盘</a>
+            <a href="/admin/tasks">爬虫任务</a>
+            <a href="/admin/sites">站点管理</a>
+            <a class="active" href="/admin/books">书库</a>
+            <form method="post" action="/admin/logout" style="margin:0">
+                <button type="submit">退出</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="panel">
+        <h2>书库（{{len .Books}} 本）</h2>
+        {{if .Books}}
+        <div class="table-wrap">
+        <table class="list">
+            <tr><th></th><th>书名</th><th>作者</th><th>来源</th><th>章节</th><th>更新时间</th><th>操作</th></tr>
+            {{range .Books}}
+            <tr>
+                <td><img class="thumb" src="{{.CoverURL}}" alt=""
+                     onerror="this.onerror=null;this.src='/static/img/cover-default.svg'"></td>
+                <td><a href="/article/{{.ID}}">{{.Title}}</a></td>
+                <td class="muted">{{.Author}}</td>
+                <td><span class="badge ghost">{{.Source}}</span></td>
+                <td class="muted">{{.ChapterCount}}</td>
+                <td class="muted">{{.UpdatedAt.Format "2006-01-02"}}</td>
+                <td>
+                    <form method="post" action="/admin/books/{{.ID}}/delete" style="margin:0"
+                          onsubmit="return confirm('确定删除《{{.Title}}》及全部 {{.ChapterCount}} 章？不可恢复')">
+                        <button class="btn ghost danger-ghost" type="submit">删除</button>
+                    </form>
+                </td>
+            </tr>
+            {{end}}
+        </table>
+        </div>
+        {{else}}
+        <div class="empty" style="padding:30px">书库是空的，先去 <a href="/admin/tasks">创建爬虫任务</a></div>
+        {{end}}
+    </div>
+</main>
+</body>
+</html>
