@@ -38,8 +38,8 @@
         {{end}}
     </div>
     {{else}}
-    <div class="empty">书架还是空的，先用爬虫抓一本书进来吧：<br><br>
-        <code>go run ./cmd/spider -source kunnu -url https://www.kunnu8.com/fanren/</code>
+    <div class="empty">书架还是空的，去后台 <a href="/admin/tasks">/admin</a> 创建一个爬虫任务吧：<br><br>
+        <code>go run ./cmd/server</code> 后访问 /admin（默认密码 admin）
     </div>
     {{end}}
 </main>

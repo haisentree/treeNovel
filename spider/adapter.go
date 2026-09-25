@@ -16,6 +16,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"golang.org/x/net/html"
+
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -96,4 +98,44 @@ func IsWatermark(paragraph, siteName string) bool {
 	}
 	s := b.String()
 	return strings.Contains(s, strings.ToLower(siteName))
+}
+
+// BrParagraphs 把「<br> 分段」的正文容器（笔趣阁系 #content）切成段落文本。
+// 先移除提示位/脚本节点，再递归遍历子节点，遇到 <br> 或块级元素即断段；
+// 段内嵌套的 b/span 等行内元素会被摊平到当前段。
+func BrParagraphs(container *goquery.Selection) []string {
+	if container.Length() == 0 {
+		return nil
+	}
+	container.Find("script, style, #content_tip, .contenttip").Remove()
+
+	var paras []string
+	var buf strings.Builder
+	flush := func() {
+		if t := strings.TrimSpace(buf.String()); t != "" {
+			paras = append(paras, t)
+		}
+		buf.Reset()
+	}
+	var walk func(n *html.Node)
+	walk = func(n *html.Node) {
+		switch {
+		case n.Type == html.TextNode:
+			buf.WriteString(n.Data)
+		case n.Type == html.ElementNode && n.Data == "br":
+			flush()
+		case n.Type == html.ElementNode:
+			if n.Data == "div" || n.Data == "p" { // 块级嵌套（广告位等），另起一段
+				flush()
+			}
+			for c := n.FirstChild; c != nil; c = c.NextSibling {
+				walk(c)
+			}
+		}
+	}
+	for _, n := range container.Contents().Nodes {
+		walk(n)
+	}
+	flush()
+	return paras
 }

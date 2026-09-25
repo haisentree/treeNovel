@@ -26,6 +26,65 @@
 
 <main class="container">
     <div class="panel">
+        <h2>添加自定义站点</h2>
+        <div class="empty" style="padding:4px 0 14px;text-align:left;font-size:13px">
+            适用于笔趣阁系模板（国内小说站大多如此）：书籍页带 og:title / og:novel:author 元信息，
+            目录是章节链接列表，正文在一个容器里分段。
+            选择器留空时用默认值（目录 <code>#list dd a</code>、标题 <code>h1</code>、正文 <code>#content</code>、&lt;br&gt; 分段），
+            大多数站点无需修改；GBK 编码站点自动转码。
+            「验证书籍页 URL」填一本真实书籍页，保存前会用所填选择器试解析，通过才允许入库。
+        </div>
+        {{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
+        <form method="post" action="/admin/sites/add">
+            <div class="form-row">
+                <div class="form-field">
+                    <label>站点标识（唯一）</label>
+                    <input type="text" name="source" pattern="[a-z0-9_-]{2,24}" title="2~24 位小写字母/数字/下划线/中划线"
+                           value="{{if .Form}}{{index .Form "Source"}}{{end}}" placeholder="mysite" required>
+                </div>
+                <div class="form-field" style="flex:1;min-width:240px">
+                    <label>域名（多个用逗号分隔）</label>
+                    <input type="text" name="domains" style="width:100%"
+                           value="{{if .Form}}{{index .Form "Domains"}}{{end}}" placeholder="www.example.com, example.com" required>
+                </div>
+                <div class="form-field">
+                    <label>正文分段</label>
+                    <select name="content_mode">
+                        <option value="br" {{if .Form}}{{if eq (index .Form "Mode") "br"}}selected{{end}}{{end}}>br 分段（默认）</option>
+                        <option value="p" {{if .Form}}{{if eq (index .Form "Mode") "p"}}selected{{end}}{{end}}>p 元素分段</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row" style="margin-top:10px">
+                <div class="form-field">
+                    <label>目录选择器</label>
+                    <input type="text" name="list_sel" value="{{if .Form}}{{index .Form "ListSel"}}{{end}}" placeholder="#list dd a">
+                </div>
+                <div class="form-field">
+                    <label>章节标题选择器</label>
+                    <input type="text" name="title_sel" value="{{if .Form}}{{index .Form "TitleSel"}}{{end}}" placeholder="h1">
+                </div>
+                <div class="form-field">
+                    <label>正文容器选择器</label>
+                    <input type="text" name="content_sel" value="{{if .Form}}{{index .Form "ContentSel"}}{{end}}" placeholder="#content">
+                </div>
+                <div class="form-field">
+                    <label>水印关键词（可选）</label>
+                    <input type="text" name="watermark" value="{{if .Form}}{{index .Form "Watermark"}}{{end}}" placeholder="示例小说网">
+                </div>
+            </div>
+            <div class="form-row" style="margin-top:10px">
+                <div class="form-field" style="flex:1;min-width:260px">
+                    <label>验证书籍页 URL（强烈建议填写，解析通过才能保存）</label>
+                    <input type="text" name="check_url" style="width:100%"
+                           value="{{if .Form}}{{index .Form "CheckURL"}}{{end}}" placeholder="https://www.example.com/1/1000/">
+                </div>
+                <button class="btn" type="submit">添加站点</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="panel">
         <h2 style="display:flex;align-items:center;gap:12px">
             爬虫站点（{{len .Sites}} 个）
             <form method="post" action="/admin/sites/check-all" style="margin:0 0 0 auto">
@@ -33,7 +92,6 @@
             </form>
         </h2>
         <div class="empty" style="padding:10px 0 16px;text-align:left;font-size:13px">
-            站点适配器在代码中注册（spider/sources/），此处管理与探测；
             「可达」只代表域名活着，选择器是否仍匹配建议用小上限试爬验证；
             停用的站点不能再创建任务，排队中的任务也会被拒绝执行。
         </div>
@@ -42,7 +100,10 @@
             <tr><th>站点</th><th>域名</th><th>启用</th><th>检测</th><th>HTTP</th><th>延迟</th><th>错误</th><th>检测时间</th><th>操作</th></tr>
             {{range .Sites}}
             <tr>
-                <td><span class="badge">{{.Source}}</span></td>
+                <td>
+                    <span class="badge">{{.Source}}</span>
+                    {{if .Custom}}<span class="badge st-running">自定义</span>{{end}}
+                </td>
                 <td class="muted">{{.Domains}}</td>
                 <td>
                     {{if .Enabled}}<span class="badge st-success">启用</span>{{else}}<span class="badge st-queued">停用</span>{{end}}
@@ -65,6 +126,12 @@
                               {{if .Enabled}}onsubmit="return confirm('停用 {{.Source}} 后将无法创建其爬虫任务，确定？')"{{end}}>
                             <button class="btn ghost" type="submit">{{if .Enabled}}停用{{else}}启用{{end}}</button>
                         </form>
+                        {{if .Custom}}
+                        <form method="post" action="/admin/sites/{{.Source}}/delete" style="margin:0"
+                              onsubmit="return confirm('删除自定义站点 {{.Source}}？已入库的书籍不受影响，但无法再创建其任务')">
+                            <button class="btn ghost danger-ghost" type="submit">删除</button>
+                        </form>
+                        {{end}}
                     </div>
                 </td>
             </tr>

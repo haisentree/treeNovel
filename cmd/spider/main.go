@@ -1,68 +1,83 @@
-// 爬虫 CLI：按站点适配器抓取一本书存入 sqlite。
+// 爬虫 CLI：按站点适配器抓取一本书存入 sqlite（与后台任务等效，适合 cron）。
 //
 // 用法：
 //
-//	go run ./cmd/spider -list
-//	go run ./cmd/spider -source kunnu -url https://www.kunnu8.com/fanren/
-//	go run ./cmd/spider -source kunnu -url ... -max 5        # 试爬前 5 章
-//	go run ./cmd/spider -source kunnu -url ... -db /path/test.db
+//	go run ./cmd/spider list
+//	go run ./cmd/spider --source kunnu --url https://www.kunnu8.com/fanren/
+//	go run ./cmd/spider --source kunnu --url ... --max 5        # 试爬前 5 章
+//	go run ./cmd/spider --db /path/test.db --source kunnu --url ...
 //
 // 已入库的书重复执行会增量更新（只补缺失章节），中断后重跑即可续爬。
 package main
 
 import (
-	"flag"
+	"fmt"
 	"log"
 	"time"
 
-	"github.com/glebarez/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	"github.com/spf13/cobra"
 
 	"treeNovel/models"
 	"treeNovel/spider"
 	"treeNovel/spider/sources"
 )
 
+var (
+	dbPath  string
+	source  string
+	bookURL string
+	max     int
+	delay   time.Duration
+)
+
 func main() {
-	dbPath := flag.String("db", "test.db", "sqlite 数据库路径")
-	source := flag.String("source", "", "站点适配器名（见 -list）")
-	bookURL := flag.String("url", "", "书籍页地址")
-	max := flag.Int("max", 0, "最多抓取章节数（试爬用），0 不限制")
-	delay := flag.Duration("delay", time.Second, "同站请求间隔")
-	list := flag.Bool("list", false, "列出全部可用适配器")
-	flag.Parse()
-
-	if *list {
-		log.Printf("可用站点适配器: %v", sources.Names())
-		return
+	root := &cobra.Command{
+		Use:   "spider",
+		Short: "treeNovel 小说爬虫 CLI",
+		Long:  "按站点适配器抓取一本书存入 sqlite。已入库的书重复执行为增量更新，\n中断后重跑即可续爬，连载书可周期性执行追更。",
+		RunE:  run,
 	}
-	if *source == "" || *bookURL == "" {
-		flag.Usage()
-		log.Fatal("必须指定 -source 和 -url")
-	}
+	root.Flags().StringVar(&dbPath, "db", "test.db", "sqlite 数据库路径")
+	root.Flags().StringVar(&source, "source", "", "站点适配器名（见 list 子命令）")
+	root.Flags().StringVar(&bookURL, "url", "", "书籍页地址")
+	root.Flags().IntVar(&max, "max", 0, "最多抓取章节数（试爬用），0 不限制")
+	root.Flags().DurationVar(&delay, "delay", time.Second, "同站请求间隔")
+	root.MarkFlagRequired("source")
+	root.MarkFlagRequired("url")
 
-	ad, err := sources.Get(*source)
+	root.AddCommand(&cobra.Command{
+		Use:   "list",
+		Short: "列出全部可用站点适配器",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println("可用站点适配器:", sources.Names())
+			return nil
+		},
+	})
+
+	if err := root.Execute(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run(cmd *cobra.Command, args []string) error {
+	// 先开库再解析适配器：自定义站点的规则存在库里，GetAny 需要查库
+	db, err := models.InitDB(dbPath, true)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	// 爬虫自己有进度日志，关掉 gorm 的 SQL 输出（去重查询会频繁触发 not found）
-	db, err := gorm.Open(sqlite.Open(*dbPath+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)"),
-		&gorm.Config{Logger: logger.Discard})
+	ad, err := sources.GetAny(source)
 	if err != nil {
-		log.Fatal(err)
-	}
-	if err := db.AutoMigrate(models.Models...); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	bookID, saved, err := spider.CrawlBook(db, ad, *bookURL, spider.Options{
-		Delay:       *delay,
-		MaxChapters: *max,
+	bookID, saved, err := spider.CrawlBook(db, ad, bookURL, spider.Options{
+		Delay:       delay,
+		MaxChapters: max,
 	})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	log.Printf("完成：书籍 id=%d，本次新增 %d 章", bookID, saved)
+	return nil
 }

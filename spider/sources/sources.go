@@ -10,6 +10,8 @@ import (
 var all = []spider.SiteAdapter{
 	KunnuAdapter{},
 	Biqu22Adapter{},
+	IbiquguAdapter{},
+	XbiquwkAdapter{},
 }
 
 // Get 按名称（适配器 Name()）取适配器。

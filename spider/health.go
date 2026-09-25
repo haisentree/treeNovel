@@ -14,8 +14,9 @@ type SiteCheckResult struct {
 	Err        string
 }
 
-// CheckSite 探测适配器声明的首个域名（https），跟随跳转，
-// 响应 2xx/3xx 视为可达。
+// CheckSite 探测适配器声明的首个域名，跟随跳转，
+// 响应 2xx/3xx 视为可达。先试 https，网络层失败（部分站点只开 http）
+// 再回退 http 重试一次。
 //
 // 注意：可达只说明域名活着——被注册商停放的域名也可能返回 200；
 // 适配器选择器是否仍能解析页面，要用小章节数的试爬任务验证。
@@ -24,8 +25,15 @@ func CheckSite(ad SiteAdapter) SiteCheckResult {
 	if len(domains) == 0 {
 		return SiteCheckResult{Err: "适配器未声明域名"}
 	}
-	target := "https://" + domains[0]
 
+	r := probe("https://" + domains[0])
+	if !r.OK && r.StatusCode == 0 && r.Err != "" {
+		r = probe("http://" + domains[0])
+	}
+	return r
+}
+
+func probe(target string) SiteCheckResult {
 	req, err := http.NewRequest(http.MethodGet, target, nil)
 	if err != nil {
 		return SiteCheckResult{Err: err.Error()}

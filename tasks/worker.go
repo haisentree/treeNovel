@@ -53,7 +53,7 @@ func runNext(db *gorm.DB) {
 	})
 	log.Printf("[task#%d] 开始执行 %s %s", task.ID, task.Source, task.BookURL)
 
-	ad, err := sources.Get(task.Source)
+	ad, err := sources.GetAny(task.Source)
 	if err == nil && !models.IsSiteEnabled(task.Source) {
 		err = fmt.Errorf("站点 %s 已在后台停用，请到站点管理启用后重跑", task.Source)
 	}
@@ -63,6 +63,15 @@ func runNext(db *gorm.DB) {
 		bookID, saved, err = spider.CrawlBook(db, ad, task.BookURL, spider.Options{
 			MaxChapters: task.MaxChapters,
 		})
+		// 网络抖动（DNS/TLS 瞬时失败）是长任务最常见的失败原因，
+		// 增量抓取幂等，失败后等 30s 自动重试一次
+		if err != nil {
+			log.Printf("[task#%d] 执行失败（%v），30s 后自动重试一次", task.ID, err)
+			time.Sleep(30 * time.Second)
+			bookID, saved, err = spider.CrawlBook(db, ad, task.BookURL, spider.Options{
+				MaxChapters: task.MaxChapters,
+			})
+		}
 		if err == nil {
 			finish(db, &task, models.TaskSuccess, bookID, saved, fmt.Sprintf("完成，本次新增 %d 章", saved))
 			return

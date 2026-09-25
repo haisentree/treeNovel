@@ -10,6 +10,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
+	"golang.org/x/net/html/charset"
 	"gorm.io/gorm"
 
 	"treeNovel/models"
@@ -68,9 +69,15 @@ func CrawlBook(db *gorm.DB, ad SiteAdapter, bookURL string, opt Options) (bookID
 
 	// Colly 默认同步访问：Visit 返回时回调已执行完，
 	// 因此每次响应把解析好的 DOM 存起来，Visit 后交给适配器。
+	// charset.NewReader 按 Content-Type/BOM/meta 探测编码，
+	// GBK/GB2312 站点自动转码为 UTF-8 后再交给 goquery。
 	var lastDoc *goquery.Document
 	c.OnResponse(func(r *colly.Response) {
-		doc, err := goquery.NewDocumentFromReader(bytes.NewReader(r.Body))
+		rd, err := charset.NewReader(bytes.NewReader(r.Body), r.Headers.Get("Content-Type"))
+		if err != nil {
+			rd = bytes.NewReader(r.Body)
+		}
+		doc, err := goquery.NewDocumentFromReader(rd)
 		if err != nil {
 			log.Printf("[spider] 解析页面失败 %s: %v", r.Request.URL, err)
 		}
