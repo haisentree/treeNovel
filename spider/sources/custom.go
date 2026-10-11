@@ -1,8 +1,8 @@
 package sources
 
 import (
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 
@@ -11,8 +11,11 @@ import (
 	"treeNovel/spider"
 )
 
+// BiqugeSelectors 笔趣阁系默认解析规则：自定义站点选择器留空时的缺省值。
+var BiqugeSelectors = Selectors{List: "#list dd a", Title: "h1", Content: "#content", Mode: "br"}
+
 // CustomAdapter 页面添加的自定义站点：解析规则存在 models.SiteStatus
-// 行里，按笔趣阁系模板解析（默认选择器见各 selOrDefault）。
+// 行里，按笔趣阁系模板解析（默认选择器见 BiqugeSelectors）。
 // 与 biquge.go 共用解析工具。
 type CustomAdapter struct {
 	Row models.SiteStatus
@@ -25,9 +28,14 @@ func FromSite(row models.SiteStatus) spider.SiteAdapter {
 
 // GetAny 统一的适配器解析：先查代码注册表，再查库里的自定义站点。
 // 任务创建、worker、CLI、健康检查都用它。
+// 内置站点被删除时透传 ErrSiteDeleted，调用方拿到明确原因而不是「未知适配器」。
 func GetAny(name string) (spider.SiteAdapter, error) {
-	if ad, err := Get(name); err == nil {
+	ad, err := Get(name)
+	if err == nil {
 		return ad, nil
+	}
+	if errors.Is(err, ErrSiteDeleted) {
+		return nil, err
 	}
 	if global.DB != nil {
 		var row models.SiteStatus
@@ -56,37 +64,27 @@ func AllAny() ([]spider.SiteAdapter, error) {
 
 func (a CustomAdapter) Name() string { return a.Row.Source }
 
-func (a CustomAdapter) Domains() []string {
-	var domains []string
-	for _, d := range strings.FieldsFunc(a.Row.Domains, func(r rune) bool {
-		return r == ',' || r == '，' || r == ' '
-	}) {
-		if d = strings.TrimSpace(d); d != "" {
-			domains = append(domains, d)
-		}
-	}
-	return domains
-}
+func (a CustomAdapter) Domains() []string { return splitDomains(a.Row.Domains) }
 
 func (a CustomAdapter) listSelOrDefault() string {
 	if a.Row.ListSel != "" {
 		return a.Row.ListSel
 	}
-	return "#list dd a"
+	return BiqugeSelectors.List
 }
 
 func (a CustomAdapter) titleSelOrDefault() string {
 	if a.Row.TitleSel != "" {
 		return a.Row.TitleSel
 	}
-	return "h1"
+	return BiqugeSelectors.Title
 }
 
 func (a CustomAdapter) contentSelOrDefault() string {
 	if a.Row.ContentSel != "" {
 		return a.Row.ContentSel
 	}
-	return "#content"
+	return BiqugeSelectors.Content
 }
 
 func (a CustomAdapter) ParseBook(pageURL string, doc *goquery.Document) (spider.BookMeta, []string, error) {
@@ -105,31 +103,6 @@ func (a CustomAdapter) ParseChapterList(pageURL string, doc *goquery.Document) (
 }
 
 func (a CustomAdapter) ParseChapter(_ string, doc *goquery.Document) (*spider.ChapterData, error) {
-	title := strings.TrimSpace(doc.Find(a.titleSelOrDefault()).First().Text())
-	if title == "" {
-		return nil, fmt.Errorf("章节页解析不到标题（选择器 %q 未命中）", a.titleSelOrDefault())
-	}
-	data := &spider.ChapterData{Title: title}
-
-	content := doc.Find(a.contentSelOrDefault())
-	var paras []string
-	if a.Row.ContentAlignment == "p" {
-		content.Each(func(_ int, p *goquery.Selection) {
-			if t := strings.TrimSpace(p.Text()); t != "" {
-				paras = append(paras, t)
-			}
-		})
-	} else {
-		paras = spider.BrParagraphs(content)
-	}
-	for _, p := range paras {
-		if p == "" || (a.Row.Watermark != "" && spider.IsWatermark(p, a.Row.Watermark)) {
-			continue
-		}
-		data.Paragraphs = append(data.Paragraphs, p)
-	}
-	if len(data.Paragraphs) == 0 {
-		return nil, fmt.Errorf("正文为空（选择器 %q 未命中）", a.contentSelOrDefault())
-	}
-	return data, nil
+	return parseChapterSel(doc, a.titleSelOrDefault(), a.contentSelOrDefault(),
+		a.Row.ContentAlignment, a.Row.Watermark)
 }

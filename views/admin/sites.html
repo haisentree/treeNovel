@@ -93,7 +93,8 @@
         </h2>
         <div class="empty" style="padding:10px 0 16px;text-align:left;font-size:13px">
             「可达」只代表域名活着，选择器是否仍匹配建议用小上限试爬验证；
-            停用的站点不能再创建任务，排队中的任务也会被拒绝执行。
+            停用或删除的站点不能再创建任务，排队中的任务也会被拒绝执行；
+            内置站点删除后重启服务也不会恢复。站点更换域名时可直接「编辑」域名。
         </div>
         <div class="table-wrap">
         <table class="list">
@@ -103,6 +104,7 @@
                 <td>
                     <span class="badge">{{.Source}}</span>
                     {{if .Custom}}<span class="badge st-running">自定义</span>{{end}}
+                    {{if .DomainsEdited}}<span class="badge st-running" title="域名手动改过，启动同步不再用内置域名覆盖">域名已改</span>{{end}}
                 </td>
                 <td class="muted">{{.Domains}}</td>
                 <td>
@@ -119,6 +121,7 @@
                 <td class="muted">{{if .CheckedAt}}{{.CheckedAt.Format "01-02 15:04:05"}}{{else}}-{{end}}</td>
                 <td>
                     <div style="display:flex;gap:6px">
+                        <a class="btn ghost" href="/admin/sites/{{.Source}}/edit">编辑</a>
                         <form method="post" action="/admin/sites/{{.Source}}/check" style="margin:0">
                             <button class="btn ghost" type="submit">检测</button>
                         </form>
@@ -126,12 +129,10 @@
                               {{if .Enabled}}onsubmit="return confirm('停用 {{.Source}} 后将无法创建其爬虫任务，确定？')"{{end}}>
                             <button class="btn ghost" type="submit">{{if .Enabled}}停用{{else}}启用{{end}}</button>
                         </form>
-                        {{if .Custom}}
                         <form method="post" action="/admin/sites/{{.Source}}/delete" style="margin:0"
-                              onsubmit="return confirm('删除自定义站点 {{.Source}}？已入库的书籍不受影响，但无法再创建其任务')">
+                              onsubmit="return confirm('{{if .Custom}}删除自定义站点 {{.Source}}？解析规则一并删除，已入库的书籍不受影响{{else}}删除内置站点 {{.Source}}？服务重启后也不会恢复，已入库的书籍不受影响，确定？{{end}}')">
                             <button class="btn ghost danger-ghost" type="submit">删除</button>
                         </form>
-                        {{end}}
                     </div>
                 </td>
             </tr>

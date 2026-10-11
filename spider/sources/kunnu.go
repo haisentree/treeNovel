@@ -10,7 +10,7 @@ import (
 	"treeNovel/spider"
 )
 
-// KunnuAdapter 鲲弩小说（www.kunnu8.com，kunnu.com 会跳转到此）。
+// KunnuAdapter 鲲弩小说（www.kunnu8.com，www.kunnu.com 会跳转至此）。
 //
 // 页面特征（2026-09 校准）：
 //   - UTF-8 编码；
@@ -20,7 +20,12 @@ type KunnuAdapter struct{}
 
 func (KunnuAdapter) Name() string { return "kunnu" }
 func (KunnuAdapter) Domains() []string {
-	return []string{"www.kunnu8.com", "kunnu8.com", "www.kunnu.com", "kunnu.com"}
+	// 裸域 kunnu.com 已失效（301 回自身 https 且证书无效），不再放行
+	return []string{"www.kunnu8.com", "kunnu8.com", "www.kunnu.com"}
+}
+
+func (KunnuAdapter) defaultSelectors() Selectors {
+	return Selectors{List: ".book-list li a", Title: "#nr_title", Content: "#nr1 p", Mode: "p", Watermark: "kunnu"}
 }
 
 func (a KunnuAdapter) ParseBook(pageURL string, doc *goquery.Document) (spider.BookMeta, []string, error) {

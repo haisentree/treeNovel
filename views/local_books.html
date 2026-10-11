@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地书库 - treeNovel</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+</head>
+<body>
+<header class="site-header">
+    <div class="inner">
+        <a class="logo" href="/">treeNovel</a>
+        <span class="slogan">本地小说阅读站</span>
+        <a class="nav-link" href="/">爬虫书架</a>
+    </div>
+</header>
+
+<main class="container">
+    {{if .Error}}
+    <div class="empty">无法读取本地书库：{{.Error}}</div>
+    {{else if .Items}}
+    <h2 class="page-title">本地书库 <span class="count">{{len .Items}} 本</span></h2>
+    <div class="book-grid">
+        {{range $val := .Items}}
+        <a class="book-card" href="/localbook/view/{{$val.Name}}">
+            <img class="cover" src="/static/img/cover-default.svg" alt="{{$val.Title}}">
+            <div class="info">
+                <div class="title">{{$val.Title}}</div>
+                <div class="meta">
+                    {{if $val.Author}}{{$val.Author}}{{else}}佚名{{end}}
+                    <span class="sep">·</span>原文件直读
+                </div>
+                {{if $val.OK}}
+                <div class="desc">全文约 {{$val.Chars}} 字，点击进入目录在线阅读</div>
+                <div>
+                    <span class="badge">可在线阅读</span>
+                    <span class="badge ghost"> {{$val.Name}}</span>
+                </div>
+                {{else}}
+                <div class="desc">{{$val.Notes}}</div>
+                <div><span class="badge ghost">无法解析</span></div>
+                {{end}}
+            </div>
+        </a>
+        {{end}}
+    </div>
+    {{else}}
+    <div class="empty">book/ 目录下还没有电子书，把 .azw / .mobi / .prc 文件放进去即可在线阅读</div>
+    {{end}}
+</main>
+</body>
+</html>

@@ -8,13 +8,18 @@ import (
 	"treeNovel/spider"
 )
 
-// IbiquguAdapter 香书小说（www.ibiqugu.net，xbiquge.la 会跳转至此）。
+// IbiquguAdapter 香书小说（www.ibiqugu.net，www.xbiquge.la 会跳转至此）。
 // 笔趣阁系模板，解析逻辑见 biquge.go。
 type IbiquguAdapter struct{}
 
 func (IbiquguAdapter) Name() string { return "ibiqugu" }
 func (IbiquguAdapter) Domains() []string {
-	return []string{"www.ibiqugu.net", "ibiqugu.net", "www.xbiquge.la", "xbiquge.la"}
+	// 裸域 xbiquge.la 已被他人注册用作无关站点，不再放行
+	return []string{"www.ibiqugu.net", "ibiqugu.net", "www.xbiquge.la"}
+}
+
+func (IbiquguAdapter) defaultSelectors() Selectors {
+	return Selectors{List: "#list dd a", Title: "h1", Content: "#content", Mode: "br", Watermark: "ibiqugu"}
 }
 
 func (a IbiquguAdapter) ParseBook(pageURL string, doc *goquery.Document) (spider.BookMeta, []string, error) {

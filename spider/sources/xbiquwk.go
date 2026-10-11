@@ -17,6 +17,10 @@ func (XbiquwkAdapter) Domains() []string {
 	return []string{"www.xbiquwk.com", "xbiquwk.com", "www.biquwx.la", "biquwx.la"}
 }
 
+func (XbiquwkAdapter) defaultSelectors() Selectors {
+	return Selectors{List: "#list dd a", Title: "h1", Content: "#content", Mode: "br", Watermark: "xbiquwk"}
+}
+
 func (a XbiquwkAdapter) ParseBook(pageURL string, doc *goquery.Document) (spider.BookMeta, []string, error) {
 	meta := biqugeMeta(doc)
 	if meta.Title == "" {

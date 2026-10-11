@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} - treeNovel</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+</head>
+<body>
+<header class="site-header">
+    <div class="inner">
+        <a class="logo" href="/">treeNovel</a>
+        <span class="slogan">本地小说阅读站</span>
+        <a class="nav-link" href="/localbook">本地书库</a>
+    </div>
+</header>
+
+<main class="container">
+    <div class="book-head">
+        <img class="cover" src="/static/img/cover-default.svg" alt="{{.Title}}">
+        <div class="info">
+            <h1>{{.Title}}</h1>
+            <div class="meta-line">
+                {{if .Book.Meta.Author}}<span>{{.Book.Meta.Author}}</span>{{end}}
+                {{if .Book.Meta.Language}}<span class="badge">{{.Book.Meta.Language}}</span>{{end}}
+                {{if .Book.Meta.Publisher}}<span class="badge ghost">{{.Book.Meta.Publisher}}</span>{{end}}
+                <span class="badge ghost">本机原文件</span>
+                <span class="badge ghost">{{len .Toc}} 节 · 约 {{.TotalChars}} 字</span>
+                <a class="badge ghost" href="/localbook/download/{{.Name}}">下载原文件</a>
+            </div>
+            {{if .Book.Description}}<p class="desc">{{.Book.Description}}</p>{{end}}
+        </div>
+    </div>
+
+    <h2 class="section-title">目录</h2>
+    <ul class="chapter-list">
+        {{range $val := .Toc}}
+        <li><a href="/localbook/read/{{$.Name}}/{{$val.Num}}" title="{{$val.Title}}">{{$val.Title}}<span class="chapter-chars">{{$val.Chars}} 字</span></a></li>
+        {{end}}
+    </ul>
+</main>
+</body>
+</html>

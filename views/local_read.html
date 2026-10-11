@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Section.Title}} - {{.BookTitle}} - treeNovel</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+</head>
+<body>
+<header class="site-header">
+    <div class="inner">
+        <a class="logo" href="/">treeNovel</a>
+        <span class="slogan">本地小说阅读站</span>
+        <a class="nav-link" href="/localbook">本地书库</a>
+    </div>
+</header>
+
+<main class="reader">
+    <h1>{{.Section.Title}}</h1>
+    <a class="back-link" href="/localbook/view/{{.Name}}">返回《{{.BookTitle}}》目录</a>
+
+    <div class="content">
+        {{range $val := .Section.Paragraphs}}
+        <p>{{$val}}</p>
+        {{end}}
+    </div>
+
+    <div class="pager">
+        {{if .PrevNum}}
+        <a href="/localbook/read/{{.Name}}/{{.PrevNum}}" title="{{.PrevTitle}}">上一节：{{.PrevTitle}}</a>
+        {{else}}
+        <span class="disabled">已是第一节</span>
+        {{end}}
+
+        {{if .NextNum}}
+        <a href="/localbook/read/{{.Name}}/{{.NextNum}}" title="{{.NextTitle}}">下一节：{{.NextTitle}}</a>
+        {{else}}
+        <span class="disabled">已是最后一节</span>
+        {{end}}
+    </div>
+</main>
+</body>
+</html>

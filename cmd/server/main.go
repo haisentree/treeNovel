@@ -20,6 +20,7 @@ import (
 
 	"treeNovel"
 	"treeNovel/admin"
+	"treeNovel/controllers"
 	"treeNovel/models"
 	"treeNovel/routers"
 	"treeNovel/spider/sources"
@@ -27,9 +28,10 @@ import (
 )
 
 var (
-	addr   string
-	dbPath string
-	debug  bool
+	addr    string
+	dbPath  string
+	bookDir string
+	debug   bool
 )
 
 func main() {
@@ -43,6 +45,7 @@ func main() {
 	}
 	root.Flags().StringVar(&addr, "addr", "0.0.0.0:8083", "监听地址")
 	root.Flags().StringVar(&dbPath, "db", "test.db", "sqlite 数据库路径")
+	root.Flags().StringVar(&bookDir, "bookdir", "book", "本地电子书目录（/localbook 在线浏览原文件）")
 	root.Flags().BoolVar(&debug, "debug", false, "gin 调试模式")
 	if err := root.Execute(); err != nil {
 		log.Fatal(err)
@@ -67,6 +70,7 @@ func run() error {
 	}
 
 	admin.SetPassword(os.Getenv("ADMIN_PASSWORD"))
+	controllers.SetBookDir(bookDir)
 	tasks.StartWorker(db)
 
 	r := gin.New()

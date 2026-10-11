@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑站点 - treeNovel 后台</title>
+    <link href="/static/css/base.css" rel="stylesheet">
+    <link href="/static/css/admin.css" rel="stylesheet">
+</head>
+<body>
+<nav class="admin-nav">
+    <div class="inner">
+        <a class="logo" href="/">treeNovel</a>
+        <span class="tag">后台</span>
+        <div class="links">
+            <a href="/admin">仪表盘</a>
+            <a href="/admin/tasks">爬虫任务</a>
+            <a class="active" href="/admin/sites">站点管理</a>
+            <a href="/admin/books">书库</a>
+            <form method="post" action="/admin/logout" style="margin:0">
+                <button type="submit">退出</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="panel">
+        <h2>编辑站点：{{.Site.Source}}
+            {{if .Site.Custom}}<span class="badge st-running">自定义</span>{{else}}<span class="badge">内置</span>{{end}}
+        </h2>
+        {{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
+
+        {{if .Result}}
+        <div class="alert" style="background:#e8f7ee;border:1px solid #b7e2c3;color:#1a7f37">
+            ✅ 可以爬到书：《{{.Result.Title}}》{{if .Result.Author}}（{{.Result.Author}}）{{end}}
+            　目录 {{.Result.Chapters}} 章，
+            第一章「{{.Result.FirstTitle}}」解析出 {{.Result.Paragraphs}} 段正文
+            {{range .Result.Preview}}<br><span style="opacity:.75">　段落预览：{{.}}</span>{{end}}
+            <br>以上基于当前表单值真实抓取，尚未保存；确认无误请点「保存修改」。
+        </div>
+        {{end}}
+
+        {{if .Site.Custom}}
+        <div class="empty" style="padding:4px 0 14px;text-align:left;font-size:13px">
+            站点标识创建后不可修改（已入库书籍按它归属）。选择器留空时用默认值
+            （输入框里的灰色占位文字即默认值）。填好「验证书籍页 URL」后可先
+            「验证解析」真实试爬，通过再「保存修改」。
+        </div>
+        {{else}}
+        <div class="empty" style="padding:4px 0 14px;text-align:left;font-size:13px">
+            内置站点解析逻辑在代码里，这里改的是<b>域名与解析规则覆盖</b>：
+            留空的字段用代码默认值（输入框里的灰色占位文字即默认值），
+            站点换模板/换域名后改这里即可，重启服务不会被覆盖。
+            改完填「验证书籍页 URL」点「验证解析」可真实试爬检查能否爬到书，确认后再保存。
+        </div>
+        {{end}}
+
+        <form method="post" action="/admin/sites/{{.Site.Source}}/update">
+            <div class="form-row">
+                <div class="form-field">
+                    <label>站点标识（不可修改）</label>
+                    <input type="text" value="{{.Site.Source}}" disabled>
+                </div>
+                <div class="form-field" style="flex:1;min-width:240px">
+                    <label>域名（多个用逗号分隔）</label>
+                    <input type="text" name="domains" style="width:100%" required
+                           value="{{if .Form}}{{index .Form "Domains"}}{{else}}{{.Site.Domains}}{{end}}"
+                           placeholder="www.example.com, example.com">
+                </div>
+                <div class="form-field">
+                    <label>正文分段</label>
+                    <select name="content_mode">
+                        <option value="br" {{if eq .EffMode "br"}}selected{{end}}>br 分段</option>
+                        <option value="p" {{if eq .EffMode "p"}}selected{{end}}>p 元素分段</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row" style="margin-top:10px">
+                <div class="form-field">
+                    <label>目录选择器（留空用默认）</label>
+                    <input type="text" name="list_sel" value="{{if .Form}}{{index .Form "ListSel"}}{{else}}{{.Site.ListSel}}{{end}}"
+                           placeholder="{{.Defaults.List}}">
+                </div>
+                <div class="form-field">
+                    <label>章节标题选择器（留空用默认）</label>
+                    <input type="text" name="title_sel" value="{{if .Form}}{{index .Form "TitleSel"}}{{else}}{{.Site.TitleSel}}{{end}}"
+                           placeholder="{{.Defaults.Title}}">
+                </div>
+                <div class="form-field">
+                    <label>正文选择器（留空用默认）</label>
+                    <input type="text" name="content_sel" value="{{if .Form}}{{index .Form "ContentSel"}}{{else}}{{.Site.ContentSel}}{{end}}"
+                           placeholder="{{.Defaults.Content}}">
+                </div>
+                <div class="form-field">
+                    <label>水印关键词（留空用默认）</label>
+                    <input type="text" name="watermark" value="{{if .Form}}{{index .Form "Watermark"}}{{else}}{{.Site.Watermark}}{{end}}"
+                           placeholder="{{if .Defaults.Watermark}}{{.Defaults.Watermark}}（站名水印）{{else}}示例小说网{{end}}">
+                </div>
+            </div>
+
+            <div class="form-row" style="margin-top:10px">
+                <div class="form-field" style="flex:1;min-width:260px">
+                    <label>验证书籍页 URL（保存后留存，随时可重新验证）</label>
+                    <input type="text" name="check_url" style="width:100%"
+                           value="{{if .Form}}{{index .Form "CheckURL"}}{{else}}{{.Site.CheckURL}}{{end}}"
+                           placeholder="https://www.example.com/1/1000/">
+                </div>
+                <button class="btn" type="submit">保存修改</button>
+                <button class="btn ghost" type="submit"
+                        formaction="/admin/sites/{{.Site.Source}}/validate">验证解析（不保存）</button>
+                <a class="btn ghost" href="/admin/sites" style="align-self:center">取消</a>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>

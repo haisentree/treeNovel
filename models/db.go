@@ -23,6 +23,18 @@ func InitDB(path string, quiet bool) (*gorm.DB, error) {
 	if err := db.AutoMigrate(Models...); err != nil {
 		return nil, err
 	}
+	backfillSiteBools(db)
 	global.DB = db
 	return db, nil
+}
+
+// backfillSiteBools 旧库布尔列补零值：AutoMigrate 给已有表新增列时
+// 旧行为 NULL（SQLite 加列不带默认值），而「custom = ?」等值比较
+// 匹配不到 NULL，内置站点的域名编辑会因此报「不存在」。幂等。
+// enabled 按其建列默认回填为启用，其余布尔列回填为零值 false。
+func backfillSiteBools(db *gorm.DB) {
+	for _, col := range []string{"custom", "domains_edited", "reachable"} {
+		db.Exec("UPDATE site_statuses SET " + col + " = 0 WHERE " + col + " IS NULL")
+	}
+	db.Exec("UPDATE site_statuses SET enabled = 1 WHERE enabled IS NULL")
 }

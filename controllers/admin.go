@@ -110,7 +110,7 @@ func AdminCreateTask(c *gin.Context) {
 	}
 
 	if _, err := sources.GetAny(source); err != nil {
-		renderErr("未知站点适配器：" + source)
+		renderErr(err.Error())
 		return
 	}
 	if !models.IsSiteEnabled(source) {

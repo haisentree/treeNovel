@@ -26,6 +26,10 @@ func (Biqu22Adapter) Domains() []string {
 	return []string{"www.22biqu.com", "22biqu.com"}
 }
 
+func (Biqu22Adapter) defaultSelectors() Selectors {
+	return Selectors{List: biqu22ListSel, Title: biqu22ChTitleSel, Content: biqu22ContentSel, Mode: "p"}
+}
+
 // 信息区与目录区的根：body 下第 4 个 div
 const (
 	biqu22InfoSel    = "body > div:nth-child(4) > div:first-child > div > div > div:nth-child(2) > div:first-child"

@@ -77,19 +77,36 @@ func biqugeLinksSel(pageURL string, doc *goquery.Document, sel string) []string 
 // biqugeChapter 解析章节页：h1 标题 + #content 正文（<br> 分段），
 // 按 siteName 过滤站名水印段落。
 func biqugeChapter(doc *goquery.Document, siteName string) (*spider.ChapterData, error) {
-	title := strings.TrimSpace(doc.Find("h1").First().Text())
+	return parseChapterSel(doc, "h1", "#content", "br", siteName)
+}
+
+// parseChapterSel 按选择器解析章节页：标题选择器取章节标题；
+// 正文选择器在 br 分段时匹配容器、p 分段时匹配段落元素本身；
+// watermark 非空时过滤命中水印的段落。
+func parseChapterSel(doc *goquery.Document, titleSel, contentSel, mode, watermark string) (*spider.ChapterData, error) {
+	title := strings.TrimSpace(doc.Find(titleSel).First().Text())
 	if title == "" {
-		return nil, fmt.Errorf("章节页解析不到标题")
+		return nil, fmt.Errorf("章节页解析不到标题（选择器 %q 未命中）", titleSel)
 	}
 	data := &spider.ChapterData{Title: title}
-	for _, p := range spider.BrParagraphs(doc.Find("#content")) {
-		if p == "" || spider.IsWatermark(p, siteName) {
+	var paras []string
+	if mode == "p" {
+		doc.Find(contentSel).Each(func(_ int, p *goquery.Selection) {
+			if t := strings.TrimSpace(p.Text()); t != "" {
+				paras = append(paras, t)
+			}
+		})
+	} else {
+		paras = spider.BrParagraphs(doc.Find(contentSel))
+	}
+	for _, p := range paras {
+		if p == "" || (watermark != "" && spider.IsWatermark(p, watermark)) {
 			continue
 		}
 		data.Paragraphs = append(data.Paragraphs, p)
 	}
 	if len(data.Paragraphs) == 0 {
-		return nil, fmt.Errorf("正文为空")
+		return nil, fmt.Errorf("正文为空（选择器 %q 未命中）", contentSel)
 	}
 	return data, nil
 }
