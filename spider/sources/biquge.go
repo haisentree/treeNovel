@@ -49,13 +49,26 @@ func biqugeLinks(pageURL string, doc *goquery.Document) []string {
 // biqugeLinksSel 取目录选择器下的章节链接（保持目录顺序），
 // 限定在本书路径下（过滤推荐位等站内链接）并按 URL 去重。
 func biqugeLinksSel(pageURL string, doc *goquery.Document, sel string) []string {
+	return sectionLinks(pageURL, doc.Find(sel))
+}
+
+// sectionLinks 从给定 <a> 集合提取章节链接（保持目录顺序），
+// 限定在本书路径下（过滤推荐位等站内链接）并按 URL 去重。
+// 目录页为文件形态（…/index_2.html）时按其所在目录判定本书路径。
+func sectionLinks(pageURL string, aSel *goquery.Selection) []string {
 	bookPath := ""
 	if u, err := url.Parse(pageURL); err == nil {
-		bookPath = strings.TrimSuffix(u.Path, "/")
+		p := u.Path
+		if strings.HasSuffix(p, ".html") || strings.HasSuffix(p, ".htm") {
+			if i := strings.LastIndex(p, "/"); i >= 0 {
+				p = p[:i+1]
+			}
+		}
+		bookPath = strings.TrimSuffix(p, "/")
 	}
 	var links []string
 	seen := map[string]bool{}
-	doc.Find(sel).Each(func(_ int, aEl *goquery.Selection) {
+	aSel.Each(func(_ int, aEl *goquery.Selection) {
 		href, ok := aEl.Attr("href")
 		if !ok || href == "" {
 			return

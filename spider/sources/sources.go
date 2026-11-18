@@ -19,6 +19,8 @@ var all = []spider.SiteAdapter{
 	Biqu22Adapter{},
 	IbiquguAdapter{},
 	XbiquwkAdapter{},
+	KebulukAdapter{},
+	BiqukeAdapter{},
 }
 
 // splitDomains 按逗号/空格拆分域名列表（全角逗号兼容）。

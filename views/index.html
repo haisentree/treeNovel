@@ -15,8 +15,18 @@
 </header>
 
 <main class="container">
-    {{if .ArticleList}}
+    {{if or .ArticleList .Categories}}
     <h2 class="page-title">书架 <span class="count">{{len .ArticleList}} 本</span></h2>
+    {{if .Categories}}
+    <nav class="cat-nav">
+        <a class="cat-chip {{if not .ActiveCategory}}active{{end}}" href="/">全部<span class="n">{{.Total}}</span></a>
+        {{range .Categories}}
+        <a class="cat-chip {{if eq .Name $.ActiveCategory}}active{{end}}"
+           href="/?category={{urlquery .Name}}">{{.Name}}<span class="n">{{.Count}}</span></a>
+        {{end}}
+    </nav>
+    {{end}}
+    {{if .ArticleList}}
     <div class="book-grid">
         {{range $val := .ArticleList}}
         <a class="book-card" href="/article/{{$val.ID}}">
@@ -37,6 +47,9 @@
         </a>
         {{end}}
     </div>
+    {{else}}
+    <div class="empty">该分类下暂时没有书籍</div>
+    {{end}}
     {{else}}
     <div class="empty">书架还是空的，去后台 <a href="/admin/tasks">/admin</a> 创建一个爬虫任务吧：<br><br>
         <code>go run ./cmd/server</code> 后访问 /admin（默认密码 admin）

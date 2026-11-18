@@ -10,10 +10,20 @@ import (
 	"treeNovel/models"
 )
 
-// Home 书架首页。
+// Home 书架首页，支持 ?category= 按分类筛选。
 func Home(c *gin.Context) {
+	category := strings.TrimSpace(c.Query("category"))
+	articleModel := models.NewArticle()
+	all := articleModel.FindAllArticle()
+	list := all
+	if category != "" {
+		list = articleModel.FindByCategory(category)
+	}
 	c.HTML(http.StatusOK, "index.html", gin.H{
-		"ArticleList": models.NewArticle().FindAllArticle(),
+		"ArticleList":    list,
+		"Categories":     articleModel.FindAllCategories(),
+		"ActiveCategory": category,
+		"Total":          len(all),
 	})
 }
 

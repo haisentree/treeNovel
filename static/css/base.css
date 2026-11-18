@@ -99,6 +99,33 @@ ul, li { margin: 0; padding: 0; list-style: none; }
 
 .badge.ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
 
+/* ============ 分类导航 ============ */
+.cat-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 18px;
+}
+
+.cat-chip {
+    padding: 3px 14px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 22px;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.cat-chip .n { margin-left: 4px; color: var(--muted); font-size: 12px; }
+
+.cat-chip:hover { color: var(--brand); border-color: var(--brand); }
+
+.cat-chip.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+.cat-chip.active .n { color: rgba(255, 255, 255, .75); }
+
 /* ============ 首页书籍网格 ============ */
 .book-grid {
     display: grid;

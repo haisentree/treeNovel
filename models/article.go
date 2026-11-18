@@ -40,6 +40,31 @@ func (a *Article) FindAllArticle() []Article {
 	return articles
 }
 
+// CategoryCount 分类导航条目：分类名 + 该分类下的书籍数。
+type CategoryCount struct {
+	Name  string
+	Count int64
+}
+
+// FindAllCategories 统计各分类的书籍数，按数量降序、同名按名称排序。
+func (a *Article) FindAllCategories() []CategoryCount {
+	var rows []CategoryCount
+	global.DB.Model(&Article{}).
+		Select("category AS name, COUNT(*) AS count").
+		Where("category <> ''").
+		Group("category").
+		Order("count DESC, name").
+		Scan(&rows)
+	return rows
+}
+
+// FindByCategory 按分类查询文章列表（精确匹配）。
+func (a *Article) FindByCategory(category string) []Article {
+	var articles []Article
+	global.DB.Where("category = ?", category).Find(&articles)
+	return articles
+}
+
 // 通过分类查询文章列表
 func (a *Article) FindArticleByID(id uint) *Article {
 	var article Article

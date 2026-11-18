@@ -28,6 +28,9 @@ type Options struct {
 
 const defaultUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
+// DefaultUA 默认请求 UA，适配器内主动跟进页面（fetchPageDoc）时也用它。
+const DefaultUA = defaultUA
+
 func (o *Options) fill() {
 	if o.Delay <= 0 {
 		o.Delay = time.Second
