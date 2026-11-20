@@ -29,3 +29,6 @@ go.work.sum
 # sqlite WAL 边车文件
 *.db-wal
 *.db-shm
+
+# Local test database (too large for git)
+test.db
