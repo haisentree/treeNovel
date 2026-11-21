@@ -1,0 +1,13 @@
+# 数据库与运行产物: 生产库不打进镜像, 运行时挂卷 (见 Dockerfile CMD)
+*.db
+*.db-shm
+*.db-wal
+book/
+
+# 本机构建产物与二进制残留
+treeNovel.exe
+*.exe
+
+# 版本库
+.git
+.github

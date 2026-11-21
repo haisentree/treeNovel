@@ -1,0 +1,22 @@
+# treeNovel 部署: echo "ADMIN_PASSWORD=<管理密码>" > .env && docker compose up -d
+# 镜像: self-tree-novel:1.0 (compose 内为本地 tag, 拉取新版本后 docker tag 对齐)
+services:
+  treenovel:
+    build: .
+    image: self-tree-novel:latest
+    container_name: tree-novel
+    restart: unless-stopped
+    ports:
+      - "8083:8083"   # 宿主端口可改左侧; 容器内固定 8083 (镜像 CMD)
+    environment:
+      # 缺失拒绝启动: 后台 /admin 无密码可被任意登录
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?请在项目根目录 .env 中设置 ADMIN_PASSWORD}
+      - TZ=Asia/Shanghai
+    volumes:
+      # sqlite 库 (treeNovel.db, WAL 模式) + 本地电子书目录, 重建容器不丢
+      - ./data:/app/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
