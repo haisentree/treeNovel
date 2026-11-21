@@ -1,7 +1,8 @@
-# 数据库与运行产物: 生产库不打进镜像, 运行时挂卷 (见 Dockerfile CMD)
+# 运行数据与旧库文件不入镜像; 打包进镜像的书库为 data/treeNovel.db (反选加回)
 *.db
 *.db-shm
 *.db-wal
+data/
 book/
 
 # 本机构建产物与二进制残留
@@ -11,3 +12,6 @@ treeNovel.exe
 # 版本库
 .git
 .github
+
+# 打包进镜像的初始书库 (快照, WAL 已合并)
+!data/treeNovel.db
