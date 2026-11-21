@@ -99,19 +99,99 @@ func (KebulukAdapter) ParseChapterList(string, *goquery.Document) ([]string, err
 }
 
 func (a KebulukAdapter) ParseChapter(_ string, doc *goquery.Document) (*spider.ChapterData, error) {
-	// 首尾广告段多含站名「斗破苍穹网」，按水印过滤
-	data, err := parseChapterSel(doc, "h1", "#contentn p", "p", "斗破苍穹网")
-	if err != nil {
-		return nil, err
+	// 站内存在两种正文模板：p 分段（主流）与 br 分段（部分分类，正文直接
+	// 落在 #contentn 文本流里，p 选择器只能命中广告段）。两种都解析并
+	// 过滤广告后，取总字数更大的一边作为正文。
+	title := strings.TrimSpace(doc.Find("h1").First().Text())
+	if title == "" {
+		return nil, fmt.Errorf("章节页解析不到标题（选择器 %q 未命中）", "h1")
 	}
-	// 「如果看累了，收藏一下本页面」提示段不含站名，按文案特征过滤
-	out := data.Paragraphs[:0]
-	for _, p := range data.Paragraphs {
-		if strings.Contains(p, "收藏一下本页面") {
+	p := filterKebulukParas(parseKebulukParas(doc, "#contentn p"), title)
+	br := filterKebulukParas(spider.BrParagraphs(doc.Find("#contentn").First()), title)
+	paras := p
+	if kebulukParaLen(br) > kebulukParaLen(p) {
+		paras = br
+	}
+	if len(paras) == 0 {
+		return nil, fmt.Errorf("正文为空（#contentn 的 p/br 两种解析均无有效段落）")
+	}
+	return &spider.ChapterData{Title: title, Paragraphs: paras}, nil
+}
+
+// filterKebulukParas 过滤广告段落：含站名「斗破苍穹网」的水印段、
+// 「收藏一下本页面」提示段、上一章/下一章导航段，以及与标题混排的
+// 首段前缀（br 模板正文开头可能直接跟着章节标题）。
+func filterKebulukParas(paras []string, title string) []string {
+	out := make([]string, 0, len(paras))
+	for _, p := range paras {
+		if spider.IsWatermark(p, "斗破苍穹网") || strings.Contains(p, "收藏一下本页面") {
 			continue
 		}
-		out = append(out, p)
+		if strings.HasPrefix(p, "上一章") && strings.Contains(p, "下一章") {
+			continue
+		}
+		p = stripPrefixIgnoreSpace(p, title)
+		if p != "" {
+			out = append(out, p)
+		}
 	}
-	data.Paragraphs = out
-	return data, nil
+	return out
+}
+
+// stripPrefixIgnoreSpace 忽略空白差异剥离 s 开头的 prefix，
+// 未匹配时原样返回（仅去首尾空白）。
+func stripPrefixIgnoreSpace(s, prefix string) string {
+	isBlank := func(r rune) bool {
+		return r == ' ' || r == '\u3000' || r == '\n' || r == '\t' || r == '\r'
+	}
+	sr := []rune(s)
+	pr := []rune(prefix)
+	pc := make([]rune, 0, len(pr))
+	for _, r := range pr {
+		if !isBlank(r) {
+			pc = append(pc, r)
+		}
+	}
+	if len(pc) == 0 {
+		return strings.TrimSpace(s)
+	}
+	sc := make([]rune, 0, len(sr))
+	idx := make([]int, 0, len(sr)) // sc[k] 对应 sr 中的 rune 下标
+	for k, r := range sr {
+		if isBlank(r) {
+			continue
+		}
+		sc = append(sc, r)
+		idx = append(idx, k)
+	}
+	if len(sc) < len(pc) {
+		return strings.TrimSpace(s)
+	}
+	for k := range pc {
+		if sc[k] != pc[k] {
+			return strings.TrimSpace(s)
+		}
+	}
+	// 匹配结束于 sr 的 rune 下标 idx[len(pc)-1]，从下一 rune 起为正文
+	return strings.TrimSpace(string(sr[idx[len(pc)-1]+1:]))
+}
+
+// parseKebulukParas p 分段解析：收集选择器命中的非空段落文本。
+func parseKebulukParas(doc *goquery.Document, sel string) []string {
+	var paras []string
+	doc.Find(sel).Each(func(_ int, p *goquery.Selection) {
+		if t := strings.TrimSpace(p.Text()); t != "" {
+			paras = append(paras, t)
+		}
+	})
+	return paras
+}
+
+// kebulukParaLen 段落总字符数，用于比较 p/br 两种解析哪边更像正文。
+func kebulukParaLen(paras []string) int {
+	n := 0
+	for _, p := range paras {
+		n += len([]rune(p))
+	}
+	return n
 }
